@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="kisskissbaby">
+  <defs>
+    <linearGradient id="g" x1="12" y1="8" x2="52" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ff8fb8"/>
+      <stop offset="55%" stop-color="#ff4d8d"/>
+      <stop offset="100%" stop-color="#e11d74"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#1a1d22"/>
+  <path
+    fill="url(#g)"
+    d="M32 54c-1.2 0-2.3-.5-3.1-1.4C22.2 45.4 12 36.2 12 26.6 12 20.2 17 15 23.2 15c3.4 0 6.5 1.6 8.8 4.2C34.3 16.6 37.4 15 40.8 15 47 15 52 20.2 52 26.6c0 9.6-10.2 18.8-16.9 25.9-.8.9-1.9 1.5-3.1 1.5z"
+  />
+  <path
+    fill="rgba(255,255,255,0.28)"
+    d="M23.5 20.2c-2.8 0-5.1 2.1-5.1 5.1 0 .7.6 1.2 1.2 1.2s1.2-.5 1.2-1.2c0-1.5 1.2-2.7 2.7-2.7.7 0 1.2-.6 1.2-1.2s-.5-1.2-1.2-1.2z"
+  />
+</svg>

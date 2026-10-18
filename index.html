@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>绳影 · Soft Rope</title>
+  <title>kisskissbaby</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet" />
@@ -13,10 +15,9 @@
   <div class="page">
     <header class="topbar">
       <div class="brand">
-        <span class="brand-mark" aria-hidden="true"></span>
+        <img class="brand-mark" src="favicon.svg" alt="" width="42" height="42" />
         <div>
-          <h1>绳影</h1>
-          <p>俯视桌面 · 平面软绳</p>
+          <h1>kisskissbaby</h1>
         </div>
       </div>
       <div class="actions">
@@ -36,6 +37,7 @@
           <button type="button" id="btn-shake" class="btn">摇晃</button>
         </div>
         <button type="button" id="btn-clear" class="btn" disabled>清空绳子</button>
+        <button type="button" id="btn-present" class="btn" disabled title="隐藏端点，适合截图展示">展示模式</button>
       </div>
     </header>
 
@@ -65,11 +67,13 @@
       <div id="dropzone" class="dropzone">
         <div class="dropzone-inner">
           <p class="drop-title">把图片拖到这里</p>
-          <p class="drop-sub">图片像平放在桌上。点两个端点拉出软绳，松弛时在平面上弯折堆叠</p>
-          <label class="file-btn">
-            选择图片
-            <input type="file" id="file-input" accept="image/*" hidden />
-          </label>
+          <div class="drop-actions">
+            <label class="file-btn">
+              选择图片
+              <input type="file" id="file-input" accept="image/*" hidden />
+            </label>
+            <button type="button" id="btn-demo" class="btn">用 demo.png 试试</button>
+          </div>
         </div>
       </div>
 

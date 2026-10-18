@@ -11,6 +11,7 @@
   const btnAdd = document.getElementById("btn-add");
   const btnShake = document.getElementById("btn-shake");
   const btnClear = document.getElementById("btn-clear");
+  const btnPresent = document.getElementById("btn-present");
   const shakeWrap = document.getElementById("shake-wrap");
   const dirPad = document.getElementById("dir-pad");
   const propsWrap = document.getElementById("props-wrap");
@@ -43,11 +44,15 @@
   let ropeThickness = Number(thicknessSlider.value);
   let ropeElasticity = Number(elasticitySlider.value);
   let selectedRopeIndex = -1;
+  let presentMode = false;
   let shakeDir = "random";
+  /** @type {{ropeIndex:number, end:'a'|'b'}|null} */
+  let dragEnd = null;
   let animId = 0;
   let lastTs = 0;
   let lastCanvasW = 0;
   let lastCanvasH = 0;
+  const END_HIT_RADIUS = 26;
 
   // 俯视桌面：没有“往下垂”的重力，只有平面摩擦与阻尼
   const BASE_DAMPING = 0.94;
@@ -101,6 +106,35 @@
 
     straightDistance() {
       return Math.hypot(this.b.x - this.a.x, this.b.y - this.a.y);
+    }
+
+    totalLength() {
+      return this.restLength * Math.max(1, this.points.length - 1);
+    }
+
+    /** 拖拽端点：两端绝对绳长尽量保持，松弛度随间距变化 */
+    moveEndpoint(end, x, y) {
+      if (end === "a") {
+        this.a.x = x;
+        this.a.y = y;
+      } else {
+        this.b.x = x;
+        this.b.y = y;
+      }
+
+      const dist = Math.max(8, this.straightDistance());
+      const segments = Math.max(1, this.points.length - 1);
+      let totalLen = this.totalLength();
+
+      if (totalLen < dist) {
+        // 拉得比绳长还远时，轻微拉长绳长，避免硬绷断
+        totalLen = dist;
+        this.slack = 1;
+      } else {
+        this.slack = Math.min(6, totalLen / dist);
+      }
+      this.restLength = totalLen / segments;
+      this.pinEnds();
     }
 
     rebuild(slack, resetShape) {
@@ -490,14 +524,17 @@
     shakeWrap.hidden = !hasRopes;
     btnClear.disabled = !hasRopes;
     propsWrap.hidden = !hasRopes;
+    btnPresent.disabled = !hasRopes;
+    if (!hasRopes && presentMode) {
+      presentMode = false;
+      btnPresent.classList.remove("active");
+    }
   }
 
-  function loadImageFile(file) {
-    if (!file || !file.type.startsWith("image/")) return;
-    const url = URL.createObjectURL(file);
+  function enterWorkspace(imageUrl, revokeAfterLoad = false) {
     bgImage.onload = () => {
       // 上传成功后彻底移除上传区，不再保留
-      dropzone.remove();
+      if (dropzone && dropzone.isConnected) dropzone.remove();
       workspace.hidden = false;
       ropes = [];
       selectedRopeIndex = -1;
@@ -509,10 +546,23 @@
       requestAnimationFrame(() => {
         syncCanvasSize();
         startLoop();
-        URL.revokeObjectURL(url);
+        if (revokeAfterLoad) URL.revokeObjectURL(imageUrl);
       });
     };
-    bgImage.src = url;
+    bgImage.onerror = () => {
+      if (revokeAfterLoad) URL.revokeObjectURL(imageUrl);
+      alert("图片加载失败，请确认 demo.png 是否存在，或换一张图片试试。");
+    };
+    bgImage.src = imageUrl;
+  }
+
+  function loadImageFile(file) {
+    if (!file || !file.type.startsWith("image/")) return;
+    enterWorkspace(URL.createObjectURL(file), true);
+  }
+
+  function loadDemoImage() {
+    enterWorkspace(`demo.png?t=${Date.now()}`, false);
   }
 
   function syncCanvasSize() {
@@ -582,7 +632,7 @@
     ctx.clearRect(0, 0, w, h);
 
     for (let i = 0; i < ropes.length; i++) {
-      ropes[i].draw(ctx, i === selectedRopeIndex);
+      ropes[i].draw(ctx, !presentMode && i === selectedRopeIndex);
     }
 
     if (pendingPoint) {
@@ -614,6 +664,14 @@
     fileInput.addEventListener("change", () => {
       loadImageFile(fileInput.files?.[0]);
     });
+    const btnDemo = document.getElementById("btn-demo");
+    if (btnDemo) {
+      btnDemo.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        loadDemoImage();
+      });
+    }
   }
 
   btnAdd.addEventListener("click", () => {
@@ -660,6 +718,20 @@
     setButtonsEnabled(true);
   });
 
+  btnPresent.addEventListener("click", () => {
+    if (!ropes.length) return;
+    presentMode = !presentMode;
+    btnPresent.classList.toggle("active", presentMode);
+    // 进入展示时退出加点状态，避免还留着提示
+    if (presentMode) {
+      placing = false;
+      pendingPoint = null;
+      btnAdd.classList.remove("active");
+      hint.hidden = true;
+      frame.classList.remove("placing");
+    }
+  });
+
   lengthSlider.addEventListener("input", () => {
     slackFactor = Number(lengthSlider.value);
     lengthValue.textContent = `${slackFactor.toFixed(2)}×`;
@@ -682,6 +754,34 @@
     elasticityValue.textContent = `${Math.round(ropeElasticity * 100)}%`;
     for (const rope of targetRopes()) rope.setElasticity(ropeElasticity);
   });
+
+  function findNearestEndpoint(p, radius = END_HIT_RADIUS) {
+    let best = null;
+    let bestD = radius;
+    for (let i = 0; i < ropes.length; i++) {
+      const r = ropes[i];
+      const d1 = Math.hypot(p.x - r.a.x, p.y - r.a.y);
+      const d2 = Math.hypot(p.x - r.b.x, p.y - r.b.y);
+      if (d1 < bestD) {
+        bestD = d1;
+        best = { ropeIndex: i, end: /** @type {'a'} */ ("a") };
+      }
+      if (d2 < bestD) {
+        bestD = d2;
+        best = { ropeIndex: i, end: /** @type {'b'} */ ("b") };
+      }
+    }
+    return best;
+  }
+
+  function clampToCanvas(p) {
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    return {
+      x: Math.max(0, Math.min(w, p.x)),
+      y: Math.max(0, Math.min(h, p.y)),
+    };
+  }
 
   function onPointerDown(e) {
     if (!bgImage.src) return;
@@ -712,27 +812,54 @@
       return;
     }
 
-    // 选中最近的绳子（点到端点附近）
-    let best = -1;
-    let bestD = 28;
-    for (let i = 0; i < ropes.length; i++) {
-      const r = ropes[i];
-      const d1 = Math.hypot(p.x - r.a.x, p.y - r.a.y);
-      const d2 = Math.hypot(p.x - r.b.x, p.y - r.b.y);
-      const d = Math.min(d1, d2);
-      if (d < bestD) {
-        bestD = d;
-        best = i;
-      }
+    const hit = findNearestEndpoint(p);
+    if (hit) {
+      dragEnd = hit;
+      selectedRopeIndex = hit.ropeIndex;
+      syncPropsFromRope(ropes[hit.ropeIndex]);
+      frame.style.cursor = "grabbing";
+      return;
     }
-    if (best >= 0) {
-      selectedRopeIndex = best;
-      syncPropsFromRope(ropes[best]);
+  }
+
+  function onPointerMove(e) {
+    if (!bgImage.src) return;
+    const p = clampToCanvas(canvasPointFromEvent(e));
+
+    if (dragEnd) {
+      e.preventDefault();
+      const rope = ropes[dragEnd.ropeIndex];
+      if (!rope) return;
+      rope.moveEndpoint(dragEnd.end, p.x, p.y);
+      // 同步松弛度显示
+      slackFactor = rope.slack;
+      lengthSlider.value = String(rope.slack);
+      lengthValue.textContent = `${rope.slack.toFixed(2)}×`;
+      return;
+    }
+
+    if (placing || presentMode) {
+      frame.style.cursor = placing ? "crosshair" : "default";
+      return;
+    }
+
+    frame.style.cursor = findNearestEndpoint(p) ? "grab" : "crosshair";
+  }
+
+  function onPointerUp() {
+    if (dragEnd) {
+      dragEnd = null;
+      frame.style.cursor = presentMode ? "default" : "crosshair";
     }
   }
 
   canvas.addEventListener("mousedown", onPointerDown);
   canvas.addEventListener("touchstart", onPointerDown, { passive: false });
+  window.addEventListener("mousemove", onPointerMove);
+  window.addEventListener("touchmove", onPointerMove, { passive: false });
+  window.addEventListener("mouseup", onPointerUp);
+  window.addEventListener("touchend", onPointerUp);
+  window.addEventListener("touchcancel", onPointerUp);
 
   window.addEventListener("resize", () => {
     if (!workspace.hidden) syncCanvasSize();
