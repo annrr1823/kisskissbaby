@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>绳影 · Soft Rope</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <h1>绳影</h1>
+          <p>俯视桌面 · 平面软绳</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" id="btn-add" class="btn btn-primary" disabled>加线</button>
+        <div class="shake-group" id="shake-wrap" hidden>
+          <div class="dir-pad" id="dir-pad" role="group" aria-label="摇晃方向">
+            <button type="button" class="dir-btn" data-dir="nw" title="左上">↖</button>
+            <button type="button" class="dir-btn" data-dir="n" title="上">↑</button>
+            <button type="button" class="dir-btn" data-dir="ne" title="右上">↗</button>
+            <button type="button" class="dir-btn" data-dir="w" title="左">←</button>
+            <button type="button" class="dir-btn active" data-dir="random" title="随机">✦</button>
+            <button type="button" class="dir-btn" data-dir="e" title="右">→</button>
+            <button type="button" class="dir-btn" data-dir="sw" title="左下">↙</button>
+            <button type="button" class="dir-btn" data-dir="s" title="下">↓</button>
+            <button type="button" class="dir-btn" data-dir="se" title="右下">↘</button>
+          </div>
+          <button type="button" id="btn-shake" class="btn">摇晃</button>
+        </div>
+        <button type="button" id="btn-clear" class="btn" disabled>清空绳子</button>
+      </div>
+    </header>
+
+    <div class="props-bar" id="props-wrap" hidden>
+      <label class="prop">
+        <span>松弛度</span>
+        <input type="range" id="length-slider" min="1" max="6" step="0.01" value="1.35" />
+        <output id="length-value">1.35×</output>
+      </label>
+      <label class="prop">
+        <span>颜色</span>
+        <input type="color" id="color-input" value="#8a5a34" />
+      </label>
+      <label class="prop">
+        <span>粗细</span>
+        <input type="range" id="thickness-slider" min="1" max="14" step="0.1" value="3.2" />
+        <output id="thickness-value">3.2</output>
+      </label>
+      <label class="prop">
+        <span>弹性</span>
+        <input type="range" id="elasticity-slider" min="0.15" max="1" step="0.01" value="0.62" />
+        <output id="elasticity-value">62%</output>
+      </label>
+    </div>
+
+    <main class="stage-wrap">
+      <div id="dropzone" class="dropzone">
+        <div class="dropzone-inner">
+          <p class="drop-title">把图片拖到这里</p>
+          <p class="drop-sub">图片像平放在桌上。点两个端点拉出软绳，松弛时在平面上弯折堆叠</p>
+          <label class="file-btn">
+            选择图片
+            <input type="file" id="file-input" accept="image/*" hidden />
+          </label>
+        </div>
+      </div>
+
+      <div id="workspace" class="workspace" hidden>
+        <div class="canvas-frame" id="canvas-frame">
+          <img id="bg-image" alt="上传的图片" draggable="false" />
+          <canvas id="rope-canvas"></canvas>
+          <div id="hint" class="hint" hidden>点击第一个端点</div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
